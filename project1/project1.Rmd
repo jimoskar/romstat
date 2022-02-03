@@ -1,7 +1,7 @@
 ---
 title: <center> TMA4250 Spatial Statistics </center>
        <center> Project 1 - Random Fields and Gaussian Random Fields </center>
-author: "Jim Totland"
+author: "Christian Moen, Jim Totland"
 date: "2/3/2022"
 output: pdf_document
 ---
