@@ -8,6 +8,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(geoR)
 ```
 
 # Problem 1
@@ -26,9 +27,39 @@ $$
 \end{split}
 $$
 
-Since the variance must be non-negative, it is clear that the PSD property above must be satisfied. 
+Since the variance must be non-negative, it is clear that the PSD property above must be satisfied. Below, the different correlation functions are illustrated. \textcolor{red}{ingen grunn til to plots, fordi ulik varians gir samme korrelasjon?!}
 ```{r}
-library(geoR)
-?cov.spatial
+curve(1/5 * cov.spatial(x, cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1), 
+      from = 0, to = 100, col = 2, xlab = "distance", ylab = expression(rho(h)))
+curve(1/5 *cov.spatial(x, cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1.9), 
+      from = 0, to = 100, col = 2, lwd = 2, add = TRUE)
+curve(1/5 * cov.spatial(x, cov.mod = "matern", cov.pars = c(5, 20), kappa = 1), 
+      from = 0, to = 100, col = 3, add = TRUE)
+curve(1/5 *cov.spatial(x, cov.mod = "matern", cov.pars = c(5, 20), kappa = 3), 
+      from = 0, to = 100, col = 3, lwd = 2, add = TRUE)
+legend("topright", c(expression("Powered exponential, " ~alpha~ " = 1"), 
+                     expression("Powered exponential, " ~alpha~ " = 1.9"),        
+                     expression("Matérn, " ~nu~ " = 1"), expression("Matérn, " ~nu~ " = 3")),
+       col = c(2,2,3,3), lwd = c(1,2,1,2))
 ```
+Next, we plot the semi-variograms. \textcolor{red}{to figurer her kanskje? litt unødvendig? spør om dette.}
 
+```{r}
+semi.variogram <- function(x, ...){
+  return(cov.spatial(0, ...) - cov.spatial(x, ...))
+}
+
+curve(semi.variogram(x, cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1), 
+      from = 0, to = 100, col = 4, xlab = "distance", ylab = expression(gamma(h)))
+curve(semi.variogram(x, cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1.9), 
+      from = 0, to = 100, col = 4, lwd = 2, add = TRUE)
+curve(semi.variogram(x, cov.mod = "matern", cov.pars = c(5, 20), kappa = 1), 
+      from = 0, to = 100, col = 5, add = TRUE)
+curve(semi.variogram(x, cov.mod = "matern", cov.pars = c(5, 20), kappa = 3), 
+      from = 0, to = 100, col = 5, lwd = 2, add = TRUE)
+legend("bottomright", c(expression("Powered exponential, " ~alpha~ " = 1"), 
+                        expression("Powered exponential, " ~alpha~ " = 1.9"),
+                        expression("Matérn, " ~nu~ " = 1"), 
+                        expression("Matérn, " ~nu~ " = 3")),
+       col = c(4,4,5,5), lwd = c(1,2,1,2))
+```
