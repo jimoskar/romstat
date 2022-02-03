@@ -1,0 +1,34 @@
+---
+title: <center> TMA4250 Spatial Statistics </center>
+       <center> Project 1 - Random Fields and Gaussian Random Fields </center>
+author: "Jim Totland"
+date: "2/3/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem 1
+## a)
+The positive semi-definite (PSD) property of the correlation function can be stated as follows. $\forall m \in \mathbb{Z}_+$, $\forall a_1, \ldots, a_m \in \mathbb{R}$ and $\forall \boldsymbol{s}_1, \ldots, \boldsymbol{s}_m \in \mathcal{D}$, we have
+
+$$
+\sum_{i = 1}^m \sum_{j = 1}^m a_i a_j \rho(\boldsymbol{s}_i, \boldsymbol{s}_j) \ge 0.
+$$
+
+To explain why this requirement is necessary, we observe that (in this case) $\rho(\boldsymbol{s}_i, \boldsymbol{s}_j) = \sigma^{-2}c(\boldsymbol{s}_i, \boldsymbol{s}_j)$, where $c$ is the covariance function. Consequently, 
+$$
+\begin{split}
+\sum_{i = 1}^m \sum_{j = 1}^m a_i a_j \rho(\boldsymbol{s}_i, \boldsymbol{s}_j) &= \sigma^{-2}\sum_{i = 1}^m \sum_{j = 1}^m a_i a_j c(\boldsymbol{s}_i, \boldsymbol{s}_j) \\
+&= \sigma^{-2} \mathrm{Var} \left[ \sum_{i = 1}^{m} a_i X(\boldsymbol{s_i})\right].
+\end{split}
+$$
+
+Since the variance must be non-negative, it is clear that the PSD property above must be satisfied. 
+```{r}
+library(geoR)
+?cov.spatial
+```
+
