@@ -65,3 +65,11 @@ legend("bottomright", c(expression("Powered exponential, " ~alpha~ " = 1"),
 ```
 
 # Problem 2: GRF - real data
+
+This is something more than what was written before. This is yet another test.
+Also I will test the r code
+
+```{r thisIsATest, options}
+a <- 123
+b = 1:9
+```
