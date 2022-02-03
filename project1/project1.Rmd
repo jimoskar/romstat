@@ -63,3 +63,5 @@ legend("bottomright", c(expression("Powered exponential, " ~alpha~ " = 1"),
                         expression("Matérn, " ~nu~ " = 3")),
        col = c(4,4,5,5), lwd = c(1,2,1,2))
 ```
+
+# Problem 2: GRF - real data
