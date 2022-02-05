@@ -1,6 +1,6 @@
 ---
 title: <center> TMA4250 Spatial Statistics </center>
-       <center> Project 1 - Random Fields and Gaussian Random Fields </center>
+       <center> Project 1 -  Random Fields and Gaussian Random Fields </center>
 author: "Christian Moen, Jim Totland"
 date: "2/3/2022"
 output: pdf_document
@@ -9,6 +9,8 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(geoR)
+library(MASS)
+library(ggplot2)
 ```
 
 # Problem 1
@@ -63,3 +65,24 @@ legend("bottomright", c(expression("Powered exponential, " ~alpha~ " = 1"),
                         expression("Matérn, " ~nu~ " = 3")),
        col = c(4,4,5,5), lwd = c(1,2,1,2))
 ```
+
+## b)
+
+By the definition of a GRF, $\boldsymbol{X} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$. The parameters are calculated from the mean- and covariance function of the GRF, such that $\boldsymbol{\mu} = \boldsymbol{0}$ and $\Sigma_{ij} = \sigma^2 \rho(\|i - j\|)$.
+
+```{r}
+n <- 50
+D.tilde <- 1:n 
+mu <- rep(0, n)
+Sigma <- cov.spatial(as.matrix(dist(expand.grid(D.tilde))), 
+                     cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1)
+X <- mvrnorm(4, mu, Sigma)
+df <- data.frame(t(X), D = D.tilde)
+ggplot(df) + geom_point(aes(x = D, y = X1), color = "red") + geom_point(aes(x = D, y = X2))
+plot(D.tilde, X[1,])
+```
+
+
+
+
+
