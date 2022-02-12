@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(geoR)
 library(MASS)
 library(ggplot2)
+library(wesanderson)
 ```
 
 # Problem 1
@@ -69,20 +70,85 @@ legend("bottomright", c(expression("Powered exponential, " ~alpha~ " = 1"),
 
 ## b)
 
-By the definition of a GRF, $\boldsymbol{X} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$. The parameters are calculated from the mean- and covariance function of the GRF, such that $\boldsymbol{\mu} = \boldsymbol{0}$ and $\Sigma_{ij} = \sigma^2 \rho(\|i - j\|)$.
+By the definition of a GRF, $\boldsymbol{X} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$. The parameters are calculated from the mean- and covariance function of the GRF, such that $\boldsymbol{\mu} = \boldsymbol{0}$ and $\Sigma_{ij} = \sigma^2 \rho(\|i - j\|)$. First, we create grids which span all the parameter combinations and summarize them in two tables.
 
 ```{r}
-n <- 50
-D.tilde <- 1:n 
-mu <- rep(0, n)
-Sigma <- cov.spatial(as.matrix(dist(expand.grid(D.tilde))), 
-                     cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1)
-X <- mvrnorm(4, mu, Sigma)
-df <- data.frame(t(X), D = D.tilde)
-ggplot(df) + geom_point(aes(x = D, y = X1), color = "red") + geom_point(aes(x = D, y = X2))
-plot(D.tilde, X[1,])
+# Parameters
+sigma2 <- c(1, 5)
+alpha <- c(1, 1.9)
+nu <- c(1, 3)
+a.exp <- 10
+a.matern <- 20
+
+params.exp <- expand.grid(sigma2, alpha, a.exp)
+params.exp <- cbind(params.exp, 1:4)
+colnames(params.exp) <- c("sigma2", "alpha", "a.exp", "combination")
+
+params.matern <- expand.grid(sigma2, alpha, a.matern)
+params.matern <- cbind(params.matern, 1:4)
+colnames(params.matern) <- c("sigma2", "nu", "a.matern", "combination")
+
+knitr::kable(params.exp)
+knitr::kable(params.matern)
 ```
 
+Then, we simulate the 4 realizations with the powered exponential covariance function for all the parameter combinations.
+```{r}
+n <- 50 # Number of grid points
+D.tilde <- 1:n # Grid
 
+df.exp <- data.frame(x = rep(D.tilde, 4), 
+                     y1 = rep(NA, 4), y2 = rep(NA, 4), y3 = rep(NA, 4), y4 = rep(NA, 4),
+                     combination = rep(NA, 4 * n))
+for(i in 1:nrow(params.exp)){
+  mu <- rep(0, n)
+  Sigma <- cov.spatial(as.matrix(dist(expand.grid(D.tilde))), 
+                     cov.mod = "powered.exponential", 
+                     cov.pars = c(params.exp$sigma2[i], params.exp$a.exp[i]), 
+                     kappa = params.exp$alpha[i])
+  X <- mvrnorm(4, mu, Sigma)
+  df.exp$y1[((i-1)*n + 1):(i*50)] = X[1, ]
+  df.exp$y2[((i-1)*n + 1):(i*50)] = X[2, ]
+  df.exp$y3[((i-1)*n + 1):(i*50)] = X[3, ]
+  df.exp$y4[((i-1)*n + 1):(i*50)] = X[4, ]
+  df.exp$combination[((i-1)*n + 1):(i*50)] = rep(i, 50)
+}
 
+palette <- wes_palette("GrandBudapest2", n = 4)
+df <- data.frame(t(X), D = D.tilde)
+ggplot(df.exp, aes(x = x)) + geom_point(aes(y = y1), color = palette[1]) + 
+  geom_point(aes(y = y2), color = palette[2]) +
+  geom_point(aes(y = y3), color = palette[3]) + 
+  geom_point(aes( y = y4), color = palette[4]) +
+  facet_wrap( ~combination, nrow = 2) + theme_minimal()
 
+```
+
+Unsurprisingly, we see that higher variance (facet 2 and 4) leads to more variability in the simulations. When the power parameter $\alpha = 1$, the realizations are much more jagged and less smooth compared to when $\alpha = 1.9$ (facet 3 and 4). We follow the same procedure to simulate with a Matérn covariance function.
+```{r}
+df.matern <- data.frame(x = rep(D.tilde, 4), 
+                     y1 = rep(NA, 4), y2 = rep(NA, 4), y3 = rep(NA, 4), y4 = rep(NA, 4),
+                     combination = rep(NA, 4 * n))
+
+for(i in 1:nrow(params.matern)){
+  mu <- rep(0, n)
+  Sigma <- cov.spatial(as.matrix(dist(expand.grid(D.tilde))), 
+                     cov.mod = "matern", 
+                     cov.pars = c(params.matern$sigma2[i], params.matern$a.matern[i]), 
+                     kappa = params.matern$nu[i])
+  X <- mvrnorm(4, mu, Sigma)
+  df.matern$y1[((i-1)*n + 1):(i*50)] = X[1, ]
+  df.matern$y2[((i-1)*n + 1):(i*50)] = X[2, ]
+  df.matern$y3[((i-1)*n + 1):(i*50)] = X[3, ]
+  df.matern$y4[((i-1)*n + 1):(i*50)] = X[4, ]
+  df.matern$combination[((i-1)*n + 1):(i*50)] = rep(i, 50)
+}
+
+palette <- wes_palette("GrandBudapest1", n = 4)
+ggplot(df.matern, aes(x = x)) + geom_point(aes(y = y1), color = palette[1]) + 
+  geom_point(aes(y = y2), color = palette[2]) +
+  geom_point(aes(y = y3), color = palette[3]) + 
+  geom_point(aes( y = y4), color = palette[4]) +
+  facet_wrap( ~combination, nrow = 2) + theme_minimal()
+```
+We also see here that higher variance (facet 2 and 4) leads to more variability in the simulations. A higher smoothness parameter, $\nu$, also leads to smoother realizations, as expected.
