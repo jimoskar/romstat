@@ -12,6 +12,7 @@ library(geoR)
 library(MASS)
 library(ggplot2)
 library(wesanderson)
+library(dplyr)
 ```
 
 # Problem 1
@@ -70,7 +71,7 @@ legend("bottomright", c(expression("Powered exponential, " ~alpha~ " = 1"),
 
 ## b)
 
-By the definition of a GRF, $\boldsymbol{X} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma)$. The parameters are calculated from the mean- and covariance function of the GRF, such that $\boldsymbol{\mu} = \boldsymbol{0}$ and $\Sigma_{ij} = \sigma^2 \rho(\|i - j\|)$. First, we create grids which span all the parameter combinations and summarize them in two tables.
+By the definition of a GRF, $\boldsymbol{X} \sim \mathcal{N}(\boldsymbol{\mu}, \Sigma_X)$. The parameters are calculated from the mean- and covariance function of the GRF, such that $\boldsymbol{\mu} = \boldsymbol{0}$ and $(\Sigma_X)_{ij} = \sigma^2 \rho(\|i - j\|)$. First, we create grids which span all the parameter combinations and summarize them in two tables.
 
 ```{r}
 # Parameters
@@ -84,7 +85,7 @@ params.exp <- expand.grid(sigma2, alpha, a.exp)
 params.exp <- cbind(params.exp, 1:4)
 colnames(params.exp) <- c("sigma2", "alpha", "a.exp", "combination")
 
-params.matern <- expand.grid(sigma2, alpha, a.matern)
+params.matern <- expand.grid(sigma2, nu, a.matern)
 params.matern <- cbind(params.matern, 1:4)
 colnames(params.matern) <- c("sigma2", "nu", "a.matern", "combination")
 
@@ -93,7 +94,7 @@ knitr::kable(params.matern)
 ```
 
 Then, we simulate the 4 realizations with the powered exponential covariance function for all the parameter combinations.
-```{r}
+```{r, cache = TRUE}
 n <- 50 # Number of grid points
 D.tilde <- 1:n # Grid
 
@@ -125,7 +126,7 @@ ggplot(df.exp, aes(x = x)) + geom_point(aes(y = y1), color = palette[1]) +
 ```
 
 Unsurprisingly, we see that higher variance (facet 2 and 4) leads to more variability in the simulations. When the power parameter $\alpha = 1$, the realizations are much more jagged and less smooth compared to when $\alpha = 1.9$ (facet 3 and 4). We follow the same procedure to simulate with a Matérn covariance function.
-```{r}
+```{r, cache = TRUE}
 df.matern <- data.frame(x = rep(D.tilde, 4), 
                      y1 = rep(NA, 4), y2 = rep(NA, 4), y3 = rep(NA, 4), y4 = rep(NA, 4),
                      combination = rep(NA, 4 * n))
@@ -152,3 +153,40 @@ ggplot(df.matern, aes(x = x)) + geom_point(aes(y = y1), color = palette[1]) +
   facet_wrap( ~combination, nrow = 2) + theme_minimal()
 ```
 We also see here that higher variance (facet 2 and 4) leads to more variability in the simulations. A higher smoothness parameter, $\nu$, also leads to smoother realizations, as expected.
+
+## b)
+We plan to observe $Y_1$, $Y_2$ and $Y_3$ at locations $s_1 = 10$, $s_2 = 25$ and $s_3 = 30$, respectively. The observation model is given by
+
+$$
+Y_i = X(s_i) + \varepsilon_i, \quad i = 1,2,3,
+$$
+
+where $\varepsilon_1, \varepsilon_2, \varepsilon_3 \overset{\mathrm{iid}}\sim \mathcal{N}(0, \sigma^2_N)$ and independent of $X$. We let $\boldsymbol{Y} = (Y_1, Y_2, Y_3)^T$. Since $\boldsymbol{Y}$ is a linear combination of multivariate normal distributions, it is multivariate normally distributed itself, with mean
+
+$$
+\mathrm{E}[\boldsymbol{Y}] = \boldsymbol{0},
+$$
+and
+$$
+\mathrm{Cov}[\boldsymbol{Y}] = \mathrm{diag}(\sigma^2_N) + \Sigma_X.
+$$
+
+We consider the Matérn covariance model with $\sigma^2 = 5$ and $\nu = 3$ and pick one realization from b). When $\sigma^2_N = 0$, $Y_i = X(s_i)$, such that the realization $\boldsymbol{Y} = \boldsymbol{y}$ becomes
+```{r}
+s = c(10, 25, 30) # Positions of interest
+realization = filter(df.matern, combination == 4)[, 2] # First realization over entire grid
+(y = realization[s])
+```
+When $\sigma^2_N = 0.25$, the realization $\boldsymbol{y}$ becomes
+```{r}
+y + rnorm(3, mean = 0, sd = sqrt(0.25))
+```
+
+## d)
+
+We now consider $\boldsymbol{X}|\boldsymbol{Y} = \boldsymbol{y}$. Its distribution is given by
+
+$$
+[\boldsymbol{X}|\boldsymbol{Y} = \boldsymbol{y}] = [\boldsymbol{X},\boldsymbol{Y}][\boldsymbol{Y}]^{-1} = [\boldsymbol{Y}|\boldsymbol{X} = \boldsymbol{x}][\boldsymbol{X}][\boldsymbol{Y}]^{-1},
+$$
+Where all factors have a multivariate normal distribution. We need to estimate the parameters associated with the GRF $X$, which we denote $\theta_X$, and we also need to estiamte $\sigma^2_N$. In order to this, we can use MCMC or maximum likelihood estimation.
