@@ -1,0 +1,146 @@
+---
+title: "Project 2"
+author: "Jim og Christian"
+date: "03 02 2022"
+output: 
+  bookdown::pdf_document2:
+    
+    number_sections: false
+  # pdf_document:
+  #   toc: no
+  #   toc_depth: '2'
+subtitle: Spatial Statistics
+urlcolor: blue
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE,tidy=TRUE,message=FALSE,warning=FALSE,
+                      strip.white=TRUE,
+                      prompt=FALSE,
+                      cache=TRUE, 
+                      size="scriptsize",
+                      fig.width=5, 
+                      fig.height=5, 
+                      fig.align = "center")
+```
+
+```{r packages, options}
+library(geoR)    
+library(akima)   
+library(fields)   
+library(MASS)     
+library(viridis)  
+library(tidyverse)
+library(spatstat)
+```
+
+# 2 GRF - Real Data
+## a) Visualization
+
+Our dataset contain $n = 52$observations of terrain elevation located in the domain $\mathcal{D} = [0, 315]^2\subset\mathbb{R^2}$.
+
+Visualization \textcolor{blue}{Vet ikke om d trengs noe mer intro til visualization?} 
+```{r P2visualization, options}
+# Read file
+dt <- read.table(file="~/Fysmat/8 Semester V2022/RomStat/Project1/Prj1Code_romstat/topo.dat")
+
+attach(dt)
+# Setup
+gx <- 100 # Out grid x
+gy <- 100 # Out grid y
+grid <- with(dt, interp(x, y, z))
+griddf <- subset(data.frame(
+  x = rep(grid$x, nrow(grid$z)),
+  y = rep(grid$y, each = ncol(grid$z)),
+  z = as.numeric(grid$z)), !is.na(z))
+
+
+ggplot(griddf, aes(x, y, z = z)) +
+  geom_contour_filled(binwidth = 30) +
+  geom_contour(bins = 50) +
+  geom_point(data = dt, shape=3) +
+  coord_fixed() +
+  #scale_fill_brewer(palette = "terrain") +
+  labs(title = "Homemade with GG") +
+  theme_minimal()
+
+image.plot(grid, col=terrain.colors(500), asp=1, main="Built in method")
+contour(grid, add=T)
+points(dt, pch=4, col="red", )
+
+xyp <- as.ppp(cbind(x,y), c(0, 315, 0, 310))
+plot(density(xyp), main = "Heatmap of observation intensity")
+
+```
+
+
+```{r SQDIST, options}
+# x1 <- seq(0, 300, 10)
+# y1 <- seq(0, 300, 10)
+# # for (i in 1:30){
+# #   x1 = append(x1,seq(0, 300, 10))
+# # }
+# z1 <- matrix(NA, nrow=length(x1), ncol = length(y1))
+# for (i in 1:31){
+#   for (j in 1:31){
+#     t = 0
+#     for (k in 1:length(dt$x)){
+#       t = t+(x1[i] - dt$x[k])^2 + (y1[j] - dt$y[k])^2
+#     }
+#     z1[i,j] = t
+#   }
+# }
+```
+
+\textcolor{green}{Explain what we see}
+
+## b) Universal Kriging
+Let $X = (X(s_1),...,X(s_{52}))^T$ be the vector of exact observations at locations $s_i,\quad i\in[1,52]$. Further assume that $X$ is a GRF modeled by
+$$
+\begin{split}
+  E[X(s)] &= g(s)^T\beta \\
+  Var[X(s)] &= \sigma^2 \\
+  Corr[X(s), X(s')] &= \rho(||s - s'||), s,s' \in \mathcal{D}.
+\end{split}
+$$
+\textcolor{blue}{refer to text setup or write in full as done below?}
+
+By following the notation in Spatial Statistics and Modeling[^1], where
+
+[^1]:Gaetan & Guyon (2009), p.44. not sure if needed, but an example of footnote.
+
+$$
+\begin{split}
+  \vec{z_i} &= (g_1(\vec{s_i}), ..., g_p(\vec{s_i}))^T \\
+  Z &= [z_1^T, ..., z_{52}^T]^T \\
+  z_0 &= (g_1(\vec{s_0}),..., g_p(\vec{s_0}))^T,
+\end{split}
+$$
+we can write the minimization problem to find the universal Kriging predictor by computing
+
+1. 
+$$
+\hat{\vec{\beta}} = (Z^T \Sigma^{-1}Z)^{-1} Z^T \Sigma \vec X
+$$
+2. 
+$$
+\hat{\vec{X_0}} = \vec z_0 \hat{\vec{\beta}} + \vec c^T \Sigma^{-1} (\vec X-Z\hat{\vec{\beta}})
+$$
+
+\textcolor{blue}{c is covar fnc mentioned in task 1. Need to mention here?}
+$$
+\begin{split}
+  \Sigma &= Cov(\vec X) = \left( 
+  \begin{array}{rl}
+    \Sigma_{00} & \Sigma_{01} \\
+    \Sigma_{10} & \Sigma_{11}
+  \end{array} \right) \\
+  \vec c &= Cov(\vec X, X_0) = \sigma^2\rho?? \\
+  \rho(h) &= \exp(-(0.05)^{1.5}) 
+\end{split}
+$$
+
+\textcolor{green}{universal Kriging prediction variance. Does $\sigma^2$ need to change for different parameterizations of the expectation function?} 
