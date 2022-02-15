@@ -154,7 +154,7 @@ ggplot(df.matern, aes(x = x)) + geom_point(aes(y = y1), color = palette[1]) +
 ```
 We also see here that higher variance (facet 2 and 4) leads to more variability in the simulations. A higher smoothness parameter, $\nu$, also leads to smoother realizations, as expected.
 
-## b)
+## c)
 We plan to observe $Y_1$, $Y_2$ and $Y_3$ at locations $s_1 = 10$, $s_2 = 25$ and $s_3 = 30$, respectively. The observation model is given by
 
 $$
@@ -166,7 +166,7 @@ where $\varepsilon_1, \varepsilon_2, \varepsilon_3 \overset{\mathrm{iid}}\sim \m
 $$
 \mathrm{E}[\boldsymbol{Y}] = \boldsymbol{0},
 $$
-and
+and \textcolor{red}{not right}
 $$
 \mathrm{Cov}[\boldsymbol{Y}] = \mathrm{diag}(\sigma^2_N) + \Sigma_X.
 $$
@@ -217,7 +217,26 @@ $$
 $$
 and we use the pointwise prediction variances, $\mathrm{diag}\left(\Sigma_{X|Y}\right)$ to construct the confidence intervals.
 ```{r}
+D.tilde <- 1:50
+Sigma_XX <- cov.spatial(as.matrix(dist(expand.grid(D.tilde))), 
+                     cov.mod = "matern", 
+                     cov.pars = c(5, 20), 
+                     kappa = 3)
 
+Sigma_XY <- Sigma_XX[ , s]
+# Construct Sigma_YY
+H <- matrix(rep(0, 3*50), nrow = 50, ncol = 3)
+H[10, 1] = 1
+H[25, 2] = 1
+H[30, 3] = 1
+dim(H)
+dim(Sigma_XX)
+Sigma_YY <- t(H) %*% Sigma_XX %*% H + 0.25*diag(3) # sigma_N^2 = 0.25
+BLUP <- Sigma_XY %*% solve(Sigma_YY) %*% y
+var.BLUP <- 2
+
+point.variance <- diag(Sigma_XX)
+ggplot(data.frame(x = D.tilde, y = BLUP), aes(x)) + geom_line(aes(y = y))
 ```
 
 
@@ -256,4 +275,3 @@ X <- L %*% Sigma # mu = 0.
 ```{r}
 
 ```
-
