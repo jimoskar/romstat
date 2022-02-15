@@ -184,12 +184,42 @@ y + rnorm(3, mean = 0, sd = sqrt(0.25))
 
 ## d)
 
-We now consider $\boldsymbol{X}|\boldsymbol{Y} = \boldsymbol{y}$. Its distribution is given by
+We now consider $\boldsymbol{X}|\boldsymbol{Y} = \boldsymbol{y}$. To find its distribution and corresponding parameters, we consider
+$$
+\begin{pmatrix}  \boldsymbol{X} \\ \boldsymbol{Y}\end{pmatrix} \sim \mathcal{N}_{50 + 3}(\boldsymbol{0}, \Sigma),
+$$
+where
+```{r}
+
+
+```
 
 $$
-[\boldsymbol{X}|\boldsymbol{Y} = \boldsymbol{y}] = [\boldsymbol{X},\boldsymbol{Y}][\boldsymbol{Y}]^{-1} = [\boldsymbol{Y}|\boldsymbol{X} = \boldsymbol{x}][\boldsymbol{X}][\boldsymbol{Y}]^{-1},
+\Sigma = \begin{pmatrix} \Sigma_{XX} & \Sigma_{XY} \\
+\Sigma_{YX} & \Sigma_{YY}
+\end{pmatrix} 
 $$
-Where all factors have a multivariate normal distribution. We need to estimate the parameters associated with the GRF $X$, which we denote $\theta_X$, and we also need to estiamte $\sigma^2_N$. In order to this, we can use MCMC or maximum likelihood estimation.
+Then we know that $\boldsymbol{X}|\boldsymbol{Y}=\boldsymbol{y} \sim \mathcal{N}(\boldsymbol{\mu}_{X|Y}, \Sigma_{X|Y})$, where
+
+$$
+\begin{split}
+\Sigma_{X|Y} &= \Sigma_{XX} - \Sigma_{XY}\Sigma_{YY}^{-1}\Sigma_{YX}, \\
+\boldsymbol{\mu}_{X|Y} &= \mathrm{E}[\boldsymbol{X}]  + \Sigma_{XY}\Sigma_{YY}^{-1} \left(\boldsymbol{y} - \mathrm{E}[\boldsymbol{Y}] \right) = \Sigma_{XY}\Sigma_{YY}^{-1} \boldsymbol{y}
+\end{split}
+$$
+Let $\widetilde{\boldsymbol{X}}  = (X(s_1), X(s_2), X(s_3))^{T}$ and $\boldsymbol{\varepsilon} = (\varepsilon_1, \varepsilon_2, \varepsilon_3)^T$. We note that
+$$
+\Sigma_{YY} = \mathrm{Cov}(\boldsymbol{Y}) = \mathrm{Cov}(\widetilde{\boldsymbol{X}} + \boldsymbol{\varepsilon}) = \mathrm{Cov}(\widetilde{\boldsymbol{X}} ) + \sigma_N^2I_3.
+$$
+For prediction we use the BLUP, which is given by
+$$
+\hat{\boldsymbol{X}} = \boldsymbol{\mu}_{X|Y},
+$$
+and we use the pointwise prediction variances, $\mathrm{diag}\left(\Sigma_{X|Y}\right)$ to construct the confidence intervals.
+```{r}
+
+```
+
 
 ## e)
 Before coding up the simulation, we note that $\boldsymbol{Y}|\boldsymbol{X} = \boldsymbol{x} \sim \mathcal{N}_3(\mu_Y,\sigma^2_NI_3)$, where ...
