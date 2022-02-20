@@ -35,6 +35,67 @@ library(MASS)
 library(viridis)  
 library(tidyverse)
 library(spatstat)
+library(scatterplot3d)
+library(plotly)
+```
+
+```{r figplotly, include=F}
+s3dPlot = function(grid, fn="surfacePlot.png",z=1.8, x=1, y=1){
+  fig = plot_ly(x=grid$x, y=grid$y,z = grid$z) %>% 
+    add_surface(
+      colors = terrain.colors(5),
+      contours = list(
+        z = list(
+          show=TRUE,
+          usecolormap=F,
+          highlightcolor="#ff1111",
+          project=list(z=TRUE)
+          ),
+        start = 0,
+        end=1000,
+        size = 0
+      )
+    ) 
+  # %>%
+    # add_contour(
+    #   # z = list(
+    #   #   show=TRUE,
+    #   #   usecolormap=F,
+    #   #   highlightcolor="#ff1111",
+    #   #   project=list(z=TRUE)
+    #   #   )
+    #   colorsc
+    #   line = list(width = 1, color = "red")
+    # )
+  m <- list(
+    l = 1,
+    r = 1,
+    b = 1,
+    t = 1,
+    pad = 100
+  )
+  fig <- fig %>% layout(
+    margin = m,
+    scene = list(
+      xaxis = list(title = "y"), 
+      yaxis = list(title = "x"),
+      zaxis = list(title = "Elevation"),
+      camera=list(
+        eye = list(x=x, y=y, z=z)
+        )
+      )
+    )%>% 
+    config(
+      toImageButtonOptions = list(
+        format = "png",
+        filename = "myplot",
+        width = 800,
+        height = 700
+      )
+    )
+  save_image(fig, file=fn)
+  return(fig)
+}
 ```
 
 # 2 GRF - Real Data
@@ -44,58 +105,79 @@ Our dataset contain $n = 52$observations of terrain elevation located in the dom
 
 Visualization \textcolor{blue}{Vet ikke om d trengs noe mer intro til visualization?} 
 ```{r P2visualization, options}
-# Read file
+figPath = "./Fysmat/8 Semester V2022/RomStat/romstat/project1/Problem2Figures/"
+
 dt <- read.table(file="~/Fysmat/8 Semester V2022/RomStat/Project1/Prj1Code_romstat/topo.dat")
 
-attach(dt)
+setwd("C:/Users/chris/OneDrive/Documents/Fysmat/8 Semester V2022/RomStat/romstat/project1/Problem2Figures/")
+
 # Setup
-gx <- 100 # Out grid x
-gy <- 100 # Out grid y
-grid <- with(dt, interp(x, y, z))
+gd = as.geodata(dt)
+grid <- interp(dt$x, dt$y, dt$z)
 griddf <- subset(data.frame(
   x = rep(grid$x, nrow(grid$z)),
   y = rep(grid$y, each = ncol(grid$z)),
   z = as.numeric(grid$z)), !is.na(z))
-
-
-ggplot(griddf, aes(x, y, z = z)) +
-  geom_contour_filled(binwidth = 30) +
-  geom_contour(bins = 50) +
-  geom_point(data = dt, shape=3) +
-  coord_fixed() +
-  #scale_fill_brewer(palette = "terrain") +
-  labs(title = "Homemade with GG") +
-  theme_minimal()
-
-image.plot(grid, col=terrain.colors(500), asp=1, main="Built in method")
+# pdf("2a_contour.pdf")
+image.plot(grid, col=terrain.colors(200), asp=1,
+  xlab="x", ylab="y"
+)
 contour(grid, add=T)
 points(dt, pch=4, col="red", )
+# dev.off()
 
-xyp <- as.ppp(cbind(x,y), c(0, 315, 0, 310))
-plot(density(xyp), main = "Heatmap of observation intensity")
+# surface2a = s3dPlot(grid, fn="2a_surface.pdf")
 
+# Linear regression to see linear data trend
+# pdf("2a_linearPlane.pdf")
+plane = lm(dt$z ~ dt$x + dt$y)
+planeplot = scatterplot3d(dt$x,dt$y,dt$z, angle=-20,
+  xlab = "x", ylab = "y", zlab = "z")
+planeplot$plane3d(plane)
+# dev.off()
+
+pdf("2a_obsDensity.pdf")
+heat <- as.ppp(cbind(dt$x,dt$y), c(0, 315, 0, 315))
+plot(density(heat, adjust=0.5), col=viridis(200, direction=-1), main="")
+dev.off()
+# df = as.data.frame(dt)
+```
+
+```{r 2a_savefigsDelete, include=F, eval=F}
+# pdf(2a_visualization)
+# par(mfrow=(c(1,2)))
+image.plot(grid, col=terrain.colors(200), asp=1,
+  xlab="x", ylab="y"
+)
+contour(grid, add=T)
+points(dt, pch=4, col="red", )
+# dev.off()
+
+plane = lm(dt$z ~ dt$x + dt$y)
+planeplot = scatterplot3d(dt$x,dt$y,dt$z, angle=35,
+  xlab = "x", ylab = "y", zlab = "z")
+planeplot$plane3d(plane)
+par(mfrow=(c(1,1)))
+# dev.off()
 ```
 
 
-```{r SQDIST, options}
-# x1 <- seq(0, 300, 10)
-# y1 <- seq(0, 300, 10)
-# # for (i in 1:30){
-# #   x1 = append(x1,seq(0, 300, 10))
-# # }
-# z1 <- matrix(NA, nrow=length(x1), ncol = length(y1))
-# for (i in 1:31){
-#   for (j in 1:31){
-#     t = 0
-#     for (k in 1:length(dt$x)){
-#       t = t+(x1[i] - dt$x[k])^2 + (y1[j] - dt$y[k])^2
-#     }
-#     z1[i,j] = t
-#   }
-# }
+```{r terraingGGplot, include=F, eval=F}
+# ggplot(griddf, aes(x, y, z = z)) +
+#   geom_contour_filled(binwidth = 30) +
+#   geom_contour(bins = 50) +
+#   geom_point(data = dt, shape=3) +
+#   coord_fixed() +
+#   #scale_fill_brewer(palette = "terrain") +
+#   labs(title = "Homemade with GG") +
+#   theme_minimal()
 ```
 
-\textcolor{green}{Explain what we see}
+
+
+\textcolor{green}{Explain what we see and answer if a stationary grf is a suitable model}
+
+Here we see a decreasing trend in positive $y$ direction, which suggest a non-constant mean function $m$. Thus, a stationary GRF model may not be suitable.
 
 ## b) Universal Kriging
 Let $X = (X(s_1),...,X(s_{52}))^T$ be the vector of exact observations at locations $s_i,\quad i\in[1,52]$. Further assume that $X$ is a GRF modeled by
@@ -106,6 +188,8 @@ $$
   Corr[X(s), X(s')] &= \rho(||s - s'||), s,s' \in \mathcal{D}.
 \end{split}
 $$
+Since correlation function is clearly isotropic, then so is the covariance function. \textcolor{gray}{(means invariant to shift and rotation. Furthermore, cov fnc is the stationary cov fnc. This is a powered exponential model.)} 
+
 \textcolor{blue}{refer to text setup or write in full as done below?}
 
 By following the notation in Spatial Statistics and Modeling[^1], where
@@ -119,7 +203,7 @@ $$
   z_0 &= (g_1(\vec{s_0}),..., g_p(\vec{s_0}))^T,
 \end{split}
 $$
-we can write the minimization problem to find the universal Kriging predictor by computing
+
 
 1. 
 $$
@@ -144,3 +228,214 @@ $$
 $$
 
 \textcolor{green}{universal Kriging prediction variance. Does $\sigma^2$ need to change for different parameterizations of the expectation function?} 
+
+\textcolor{red}{Written stuff in overleaf}
+
+## c) Ordinary kriging
+Model as in universal kriging, but with mean $E[X(s)] = g(s)\beta_1 = \beta_1 \Leftrightarrow g(s) = 1,\quad \forall s\in \mathcal{D}$. For the code we chose the range by where the correlation function is $\rho(h)=0.1 \Leftrightarrow h = 174$ (typically 10-13%)
+```{r 2c_ordKrig, options}
+D = seq(1,315,1)
+gridOrd = expand.grid(x = D, y = D)
+# Spatial Prediction - Ordinary Kriging
+spOK = krige.conv(gd, locations=gridOrd,
+           krige = krige.control(
+             # defaults to ordinary Kriging and constant mean
+             cov.model = "powered.exponential",
+             cov.pars = c(50^2, 100), # (partial sill, range)
+               kappa = 1.5 # Smoothness
+           )
+           )
+```
+
+```{r 2c_ordKrig2, options}
+# Beta estimate
+spOK$beta.est
+predOK = matrix(spOK$predict, ncol = 315) # to fit image.plot structure
+varOK = matrix(spOK$krige.var, ncol = 315)
+expImageOK = list(x = D, y = D, z = predOK)
+VarImageOK = list(x = D, y = D, z = varOK)
+# par(mfrow=(c(1,2)))
+
+# Kriging predictor
+# pdf("2c_ordKrigPred.pdf")
+image.plot(expImageOK, col=terrain.colors(200),asp=1)
+contour(expImageOK, add = T)
+# dev.off()
+
+# Associated prediction variance
+# pdf("2c_ordKrigVar.pdf")
+image.plot(VarImageOK, col=viridis(200),asp=1)
+points(dt$x, dt$y, col="white", pch=4)
+# dev.off()
+# par(mfrow=(c(1,1)))
+```
+```{r 2c_3d, include=F, eval=F}
+grid2c = grid
+grid2c$z = expImageOK
+# surface3d = s3dPlot(expImageOK, fn = "2c_ordKrigSurface.pdf")
+```
+
+```{r diffTerrain, include = F, eval=F}
+# grid2 = interp(x,y,z, nx=315,ny=315)
+# D = seq(1,315,1)
+# gridOrd = expand.grid(x = grid2$x, y = grid2$y)
+# gd = as.geodata(dt)
+# typeof(gd$coords)
+# phi = 174 # Range set st. rho(phi) = 0.1
+# # Spatial Prediction - Ordinary Kriging
+# spOK = krige.conv(coords=cbind(x=x,y=y), data=z, locations=gridOrd,
+#            krige = krige.control(
+#              # defaults to ordinary Kriging and constant mean
+#              cov.model = "powered.exponential",
+#              cov.pars = c(50^2, 174), #(partial sill, range)
+#              kappa = 1.5 # Smoothness
+#            )
+#            )
+# par(mfrow=c(1,2))
+# test = abs(grid2$z - matrix(spOK$predict, ncol = 315))
+# image.diff = list(x = grid2$x, y=grid2$y, z=test)
+# image.plot(image.diff, col=terrain.colors(52), asp=1, main = "Diff")
+# points(dt, pch=4, col="red")
+# 
+# xyp <- as.ppp(cbind(x,y), c(0, 315, 0, 315))
+# plot(density(xyp), main = "observation intensity")
+# par(mfrow=c(1,1))
+```
+
+\textcolor{green}{Comment on results.}
+
+## d) Universal Kriging
+We denote the site $s = (s_1, s_2)$, and we set $n_g = 6$ to be the total number of known functions in the vector-valued function $g$. Furthermore, we specify each function in $g$ to be all polynomials $s_1^k s_2^l$ for $(k,l)\in{(0,0), (1,0), (0,1),(1,1), (2,0), (0,2)}$. Thus, the $6$-dimensional vector is \textcolor{gray}{use array instead}
+
+\begin{equation}
+  g(s) = [1, s_1, s_2, s_1s_2, s_1^2, s_2^2]
+\end{equation}
+
+The expected value of $X(s)$ is then
+
+\begin{equation}
+E[X(s)] = g(s)^T\beta = \beta_1 + \beta_2 s_1 + \beta_3 s_2 \beta_4s_1s_2 + \beta_5 s_{1}^{2} + \beta_6 s_{2}^{2}
+\end{equation}
+
+
+```{r 2d_uniKrig, options}
+gridUniv = expand.grid(x = D, y = D)
+spUK     = krige.conv(
+  geodata=gd,
+  # coords    = cbind(x=x,y=y), 
+  # data      = z, 
+  locations = gridOrd,
+  krige     = krige.control(
+    type.krige = "ok",
+#"2nd": beta0 + beta1*x1 + beta2*x2 + beta3*(x1)^2 + beta4*(x2)^2 + beta5*x1*x2
+    trend.d    = "2nd", 
+    trend.l    = "2nd",
+    cov.model  = "powered.exponential",
+    cov.pars   = c(50^2, 100),
+    kappa      = 1.5
+  )
+)
+```
+```{r 2d_uniKrigPreds}
+# Estimated beta Universal Kriging
+betaHat = (spUK$beta.est)
+o2 = c(1,2,3,6,4,5) # order of betas corresponding to task description
+betaHat[o2]
+
+# Universal Kriging predictor
+predUK = matrix(spUK$predict, ncol=315)
+imageUK = list(x=D, y=D, z=predUK)
+# pdf("2d_univKrigPred.pdf")
+image.plot(imageUK,
+           col=terrain.colors(200), 
+           asp=1)
+contour(list(x=D, y=D, z=predUK), add=T)
+# points(dt$x,dt$y, pch=4, col = "red")
+# dev.off()
+
+# Associated variance predictions
+varUK = matrix(spUK$krige.var,ncol = 315) # Predicted variance
+# pdf("2d_univKrigVar.pdf")
+image.plot(list(x=D,y=D,z=varUK), col=viridis(200), asp=1)
+points(dt$x,dt$y, pch=4, col = "white")
+# dev.off()
+# surface3d2 = s3dPlot(imageUK, fn="2d_univKrigSurface.pdf")
+
+# Difference ordinary and universal
+predDiff = abs(predUK - predOK)
+breaksPred = 1.1^(-190:10)/1.1^10*max(predDiff)
+pdf("2d_predDiff.pdf")
+image.plot(list(x=D,y=D,z=predDiff), col=viridis(200), asp=1,breaks = breaksPred)
+# points(dt$x,dt$y, pch=4, col = "white")
+dev.off()
+
+sigmaDiff = varUK - varOK
+min(sigmaDiff)
+breaksPred = 1.1^(-190:10)/1.1^10*max(sigmaDiff)
+pdf("2d_varDiff.pdf")
+image.plot(list(x=D,y=D,z=sigmaDiff), col=viridis(200), asp=1, breaks = breaksVar)
+# points(dt$x,dt$y, pch=4, col = "white")
+dev.off()
+```
+
+## e) 
+```{r 2e_2cReKrige, options}
+D = seq(1,315,1)
+gridUniv = expand.grid(x = D, y = D)
+spUK     = krige.conv(geodata = gd,
+  locations = gridUniv,
+  krige     = krige.control(
+    type.krige = "ok",
+    #"2nd": beta0 + beta1*x1 + beta2*x2 + beta3*(x1)^2 + beta4*(x2)^2 + beta5*x1*x2
+    trend.d    = "2nd",
+    trend.l    = "2nd",
+    cov.model  = "powered.exponential",
+    cov.pars   = c(50^2, 100),
+    kappa      = 1.5
+  )
+)
+
+```
+
+```{r 2e_plots, options}
+# These are not needed???!!!
+predUK = matrix(spUK$predict,ncol = 315)
+imageUKe = list(x=D,y=D,z=predUK)
+# # pdf("2e_ordKrigPred.pdf")
+# # image.plot(D,D,z=predUK, col=terrain.colors(200), asp=1)
+# # contour(D,D,predUK, add = T)
+# # points(dt$x,dt$y, col="red", pch=4)
+# dev.off()
+# 
+# # Associated prediction variance
+# sigmaHat = matrix(spUK$krige.var,ncol = 315)
+# pdf("2e_ordKrigVar.pdf")
+# image.plot(x=D,y=D,z=sigmaHat, col=viridis(200), asp=1)
+# points(gd[[1]][,1],gd[[1]][,2], pch=4, col = "white")
+# dev.off()
+
+```
+
+
+```{r 2e_probs, options}
+# deleteResults = c(q1=
+#   pnorm(850, mean = r0_hat, sd = sqrt(sigma_r_hat2), lower.tail = FALSE),
+#   q2=
+#   qnorm(0.9, mean = r0_hat, sd = sqrt(sigma_r_hat2))
+# )
+
+
+vars0 = matrix(spOK$krige.var, ncol=315)[100,100]
+x0 = matrix(spOK$predict, ncol = 315)[100,100]
+s0 = predOK[100,100]
+# P(X((100,100))>850)
+pnorm(850, mean = x0, sd=sqrt(vars0), lower.tail = F)
+# critical value for which the true val is below
+# with a prob of 0.9
+qnorm(0.9, x0, sqrt(vars0))
+```
+
+We have assumed normally distributed errors $\varepsilon$ for the linear regression model. Thus, our predictions $\hat X(s_o) = \hat X((100,100)^T) =$ are normally distributed about the mean $E\hat X_0$. Specifically for $s_0 = (100,100)^T$ we have $\hat X((100,100)^T) =$
+
+
+ 
