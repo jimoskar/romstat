@@ -237,43 +237,46 @@ Model as in universal kriging, but with mean $E[X(s)] = g(s)\beta_1 = \beta_1 \L
 D = seq(1,315,1)
 gridOrd = expand.grid(x = D, y = D)
 # Spatial Prediction - Ordinary Kriging
-spOK = krige.conv(gd, locations=gridOrd,
-           krige = krige.control(
-             # defaults to ordinary Kriging and constant mean
-             cov.model = "powered.exponential",
-             cov.pars = c(50^2, 100), # (partial sill, range)
-               kappa = 1.5 # Smoothness
-           )
-           )
+spOK = krige.conv(
+  geodata=gd,
+  locations=gridOrd,
+  krige = krige.control(
+    # defaults to ordinary Kriging and constant mean
+    cov.model = "powered.exponential",
+    cov.pars = c(50^2, 100), # (partial sill, range)
+    kappa = 1.5 # Smoothness
+    )
+)
 ```
 
 ```{r 2c_ordKrig2, options}
 # Beta estimate
 spOK$beta.est
+# manual
+mean(dt$z)
+spOK$message
+
 predOK = matrix(spOK$predict, ncol = 315) # to fit image.plot structure
 varOK = matrix(spOK$krige.var, ncol = 315)
-expImageOK = list(x = D, y = D, z = predOK)
-VarImageOK = list(x = D, y = D, z = varOK)
-# par(mfrow=(c(1,2)))
 
 # Kriging predictor
 # pdf("2c_ordKrigPred.pdf")
-image.plot(expImageOK, col=terrain.colors(200),asp=1)
-contour(expImageOK, add = T)
+predImageOK = list(x = D, y = D, z = predOK)
+image.plot(predImageOK, col=terrain.colors(200),asp=1)
+contour(predImageOK, add = T)
 # dev.off()
 
 # Associated prediction variance
 # pdf("2c_ordKrigVar.pdf")
-image.plot(VarImageOK, col=viridis(200),asp=1)
+varImageOK = list(x = D, y = D, z = varOK)
+image.plot(varImageOK, col=viridis(200),asp=1)
 points(dt$x, dt$y, col="white", pch=4)
 # dev.off()
-# par(mfrow=(c(1,1)))
+
+
+# surface3d = s3dPlot(predImageOK, fn = "2c_ordKrigSurface.pdf")
 ```
-```{r 2c_3d, include=F, eval=F}
-grid2c = grid
-grid2c$z = expImageOK
-# surface3d = s3dPlot(expImageOK, fn = "2c_ordKrigSurface.pdf")
-```
+
 
 ```{r diffTerrain, include = F, eval=F}
 # grid2 = interp(x,y,z, nx=315,ny=315)
@@ -362,18 +365,24 @@ points(dt$x,dt$y, pch=4, col = "white")
 # surface3d2 = s3dPlot(imageUK, fn="2d_univKrigSurface.pdf")
 
 # Difference ordinary and universal
-predDiff = abs(predUK - predOK)
-breaksPred = 1.1^(-190:10)/1.1^10*max(predDiff)
+predDiff = (predUK - predOK)
 pdf("2d_predDiff.pdf")
-image.plot(list(x=D,y=D,z=predDiff), col=viridis(200), asp=1,breaks = breaksPred)
+image.plot(list(x=D,y=D,z=predDiff), col=turbo(200), asp=1)
+# points(dt$x,dt$y, pch=4, col = "white")
+dev.off()
+# Logarithmic color gradient
+predDiffLog = abs(predUK - predOK)
+breaksPred = 1.1^(-190:10)/1.1^10*max(predDiff)
+pdf("2d_predDiffLog.pdf")
+image.plot(list(x=D,y=D,z=predDiffLog), col=viridis(200), asp=1,breaks = breaksPred)
 # points(dt$x,dt$y, pch=4, col = "white")
 dev.off()
 
-sigmaDiff = varUK - varOK
-min(sigmaDiff)
-breaksPred = 1.1^(-190:10)/1.1^10*max(sigmaDiff)
+varDiff = varUK - varOK
+breaksVar = 1.1^(-189:10)/1.1^10*(max(varDiff)+1)
+breaksVar = c(-0.001,breaksVar)
 pdf("2d_varDiff.pdf")
-image.plot(list(x=D,y=D,z=sigmaDiff), col=viridis(200), asp=1, breaks = breaksVar)
+image.plot(list(x=D,y=D,z=varDiff), col=viridis(200), asp=1, breaks = breaksVar)
 # points(dt$x,dt$y, pch=4, col = "white")
 dev.off()
 ```
@@ -398,21 +407,8 @@ spUK     = krige.conv(geodata = gd,
 ```
 
 ```{r 2e_plots, options}
-# These are not needed???!!!
+
 predUK = matrix(spUK$predict,ncol = 315)
-imageUKe = list(x=D,y=D,z=predUK)
-# # pdf("2e_ordKrigPred.pdf")
-# # image.plot(D,D,z=predUK, col=terrain.colors(200), asp=1)
-# # contour(D,D,predUK, add = T)
-# # points(dt$x,dt$y, col="red", pch=4)
-# dev.off()
-# 
-# # Associated prediction variance
-# sigmaHat = matrix(spUK$krige.var,ncol = 315)
-# pdf("2e_ordKrigVar.pdf")
-# image.plot(x=D,y=D,z=sigmaHat, col=viridis(200), asp=1)
-# points(gd[[1]][,1],gd[[1]][,2], pch=4, col = "white")
-# dev.off()
 
 ```
 
@@ -428,6 +424,7 @@ imageUKe = list(x=D,y=D,z=predUK)
 vars0 = matrix(spOK$krige.var, ncol=315)[100,100]
 x0 = matrix(spOK$predict, ncol = 315)[100,100]
 s0 = predOK[100,100]
+c(krigPred = x0, predVar = vars0)
 # P(X((100,100))>850)
 pnorm(850, mean = x0, sd=sqrt(vars0), lower.tail = F)
 # critical value for which the true val is below
@@ -435,7 +432,7 @@ pnorm(850, mean = x0, sd=sqrt(vars0), lower.tail = F)
 qnorm(0.9, x0, sqrt(vars0))
 ```
 
-We have assumed normally distributed errors $\varepsilon$ for the linear regression model. Thus, our predictions $\hat X(s_o) = \hat X((100,100)^T) =$ are normally distributed about the mean $E\hat X_0$. Specifically for $s_0 = (100,100)^T$ we have $\hat X((100,100)^T) =$
+We have assumed normally distributed errors $\varepsilon$ for the linear regression model. Thus, our predictions $\hat X(s_o) = \hat X((100,100)^T)$ are normally distributed about the mean $E\hat X_0$. Considering the unobserved location $s_0 = (100,100)^T$ we get the Kriging predictor $\hat X((100,100)^T) \approx 851$ with associated variance $\sigma^2_{\bs{\hat X}}$
 
 
  
