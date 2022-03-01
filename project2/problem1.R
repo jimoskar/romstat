@@ -25,3 +25,22 @@ ggplot(pines.df) + geom_point(aes(x = x, y = y)) +
   geom_rect(aes(xmin = pines$area[1], xmax = pines$area[2], ymin = pines$area[3], ymax = pines$area[4]),
             alpha = 0, color = 1) + theme_minimal()
 ggsave("figures/pines.pdf")
+
+## b) ----
+# L for cells
+L.cells <- Kfn(cells, 1)
+L.cells.df <- data.frame(x = L.cells$x, y = L.cells$y)
+ggplot(L.cells.df) + geom_line(aes(x, y)) + geom_abline(intercept = 0, slope = 1, color = "red") + 
+  theme_minimal()
+
+# L for redwood
+L.redwood <- Kfn(redwood, 1)
+L.redwood.df <- data.frame(x = L.redwood$x, y = L.redwood$y)
+ggplot(L.redwood.df) + geom_line(aes(x, y)) + geom_abline(intercept = 0, slope = 1, color = "red") + 
+  theme_minimal()
+
+# L for pines
+L.pines <- Kfn(pines, 10)
+L.pines.df <- data.frame(x = L.pines$x, y = L.pines$y)
+ggplot(L.pines.df) + geom_line(aes(x, y)) + geom_abline(intercept = 0, slope = 1, color = "red") + 
+  theme_minimal()
