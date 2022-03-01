@@ -28,19 +28,19 @@ ggsave("figures/pines.pdf")
 
 ## b) ----
 # L for cells
-L.cells <- Kfn(cells, 1)
+L.cells <- Kfn(ppinit("cells.dat"), fs = 1, k = 100)
 L.cells.df <- data.frame(x = L.cells$x, y = L.cells$y)
 ggplot(L.cells.df) + geom_line(aes(x, y)) + geom_abline(intercept = 0, slope = 1, color = "red") + 
   theme_minimal()
 
 # L for redwood
-L.redwood <- Kfn(redwood, 1)
+L.redwood <- Kfn(ppinit("redwood.dat"), fs = 1, k = 100)
 L.redwood.df <- data.frame(x = L.redwood$x, y = L.redwood$y)
 ggplot(L.redwood.df) + geom_line(aes(x, y)) + geom_abline(intercept = 0, slope = 1, color = "red") + 
   theme_minimal()
 
 # L for pines
-L.pines <- Kfn(pines, 10)
+L.pines <- Kfn(ppinit("pines.dat"), fs = 10, k = 100)
 L.pines.df <- data.frame(x = L.pines$x, y = L.pines$y)
 ggplot(L.pines.df) + geom_line(aes(x, y)) + geom_abline(intercept = 0, slope = 1, color = "red") + 
   theme_minimal()
