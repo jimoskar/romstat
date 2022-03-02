@@ -55,8 +55,6 @@ sim.ppp <- function(xmin, xmax, ymin, ymax, n){
     x.sim <- runif(n, xmin, xmax)
     y.sim <- runif(n, ymin, ymax)
     L <- Kfn(list(x = x.sim, y = y.sim), fs = 0.5, k = k)
-    print(length(L$x))
-    #print(L$k)
     L.mat[i, ] = L$y
   }
   return(list(x = L$x, y = L.mat))
@@ -64,12 +62,14 @@ sim.ppp <- function(xmin, xmax, ymin, ymax, n){
 
 n.cells <- length(cells$x)
 cells.pois <- sim.ppp(0,1,0,1, n.cells)
-mean <- apply(cells.pois$y, 2, mean)
-S2 <- apply(cells.pois$y, 2, var)
-z.005 <- qnorm(0.05, lower.tail = FALSE)
-lower <- mean  - z.005*sqrt(S2)
-upper <- mean  + z.005*sqrt(S2)
+#mean <- apply(cells.pois$y, 2, mean)
+# S2 <- apply(cells.pois$y, 2, var)
+# z.005 <- qnorm(0.05, lower.tail = FALSE)
+# lower <- mean  - z.005*sqrt(S2)
+# upper <- mean  + z.005*sqrt(S2)
 
+upper <- apply(cells.pois$y, 2,  quantile, probs = c(0.95))
+lower <- apply(cells.pois$y, 2,  quantile, probs = c(0.05))
 ggplot(data = data.frame(l = lower, u = upper, x = cells.pois$x)) + 
   geom_ribbon(aes(x = x, ymin = l, ymax = u))
 
