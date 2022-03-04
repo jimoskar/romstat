@@ -5,9 +5,9 @@ library(tidyverse)
 ## a) ----
 
 a.mat = read.table("obsprob.txt", header = TRUE)
-a.vec = aMat$alpha
+a.vec = a.mat$alpha
 p.mat = read.table("obspines.txt", header = TRUE)
-p.vec = pMat$N_obs
+p.vec = p.mat$N_obs
 p.mat
 
 x.center <- y.center <- (1:30)*10 - 5 
@@ -24,3 +24,9 @@ ggplot(p.mat, aes(x, y)) +
   scale_fill_viridis(expression(N[obs])) +
   coord_fixed() + xlab("x") + ylab("y") + 
   ggtitle("Detected pine counts") + theme_minimal()
+
+## c) ----
+# Calculate estimator
+C <- 1/(100 * sum(a.vec))
+Lambda2 <- C*sum(p.vec)
+Lambda2
