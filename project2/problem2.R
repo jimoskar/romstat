@@ -30,3 +30,24 @@ ggplot(p.mat, aes(x, y)) +
 C <- 1/(100 * sum(a.vec))
 Lambda2 <- C*sum(p.vec)
 Lambda2
+# Simulate counts within each cell
+sim.points <- function(lambda, plot=TRUE){
+  dx <- dy <- 10 # width and height of the cells
+  lambda.cell <- 100*lambda
+  N.mat <- data.frame(x = p.mat$x, y = p.mat$y)
+  N.vec <- rpois(900, lambda.cell)
+  N.mat$N <- N.vec
+  p <- ggplot()
+  for(i in 1:nrow(N.mat)){
+    n <- N.mat$N[i] # number of points in current cell
+    x <- runif(n, N.mat$x[i] - dx/2, N.mat$x[i] + dx/2)
+    y <- runif(n, N.mat$y[i] - dy/2, N.mat$y[i] + dy/2)
+    p <- p + geom_point(data = data.frame(x = x, y = y), aes(x,y))
+  }
+  if(plot == TRUE) p + theme_minimal()
+}
+# Generate 3 realizations
+set.seed(2)
+sim.points(Lambda2)
+sim.points(Lambda2)
+sim.points(Lambda2)
