@@ -51,3 +51,23 @@ set.seed(2)
 sim.points(Lambda2)
 sim.points(Lambda2)
 sim.points(Lambda2)
+
+## d) ----
+sim.cond <- function(lambda, plot=TRUE){
+  dx <- dy <- 10 # width and height of the cells
+  lambda.vec <- 100*lambda*(1 - a.vec)
+  N.mat <- data.frame(x = a.mat$x, y = a.mat$y)
+  N.vec <- rpois(900, lambda = lambda.vec)
+  N.mat$N <- N.vec
+  p <- ggplot()
+  for(i in 1:nrow(N.mat)){
+    n <- N.mat$N[i] # number of points in current cell
+    x <- runif(n, N.mat$x[i] - dx/2, N.mat$x[i] + dx/2)
+    y <- runif(n, N.mat$y[i] - dy/2, N.mat$y[i] + dy/2)
+    p <- p + geom_point(data = data.frame(x = x, y = y), aes(x,y))
+  }
+  if(plot == TRUE) p + theme_minimal()
+}
+
+sim.cond(Lambda2)
+sim.cond(Lambda2)
