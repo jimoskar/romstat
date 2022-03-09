@@ -56,17 +56,6 @@ s3dPlot = function(grid, fn="surfacePlot.png",z=1.8, x=1, y=1){
         size = 0
       )
     ) 
-  # %>%
-    # add_contour(
-    #   # z = list(
-    #   #   show=TRUE,
-    #   #   usecolormap=F,
-    #   #   highlightcolor="#ff1111",
-    #   #   project=list(z=TRUE)
-    #   #   )
-    #   colorsc
-    #   line = list(width = 1, color = "red")
-    # )
   m <- list(
     l = 1,
     r = 1,
@@ -253,8 +242,7 @@ spOK = krige.conv(
 # Beta estimate
 spOK$beta.est
 # manual
-mean(dt$z)
-spOK$message
+
 
 predOK = matrix(spOK$predict, ncol = 315) # to fit image.plot structure
 varOK = matrix(spOK$krige.var, ncol = 315)
@@ -382,9 +370,10 @@ varDiff = varUK - varOK
 breaksVar = 1.1^(-189:10)/1.1^10*(max(varDiff)+1)
 breaksVar = c(-0.001,breaksVar)
 pdf("2d_varDiff.pdf")
-image.plot(list(x=D,y=D,z=varDiff), col=viridis(200), asp=1, breaks = breaksVar)
+image.plot(list(x=D,y=D,z=varDiff), col=turbo(200), asp=1, breaks = breaksVar)
 # points(dt$x,dt$y, pch=4, col = "white")
 dev.off()
+image.plot(list(x=D,y=D,z=varDiff), col=turbo(200), asp=1)
 ```
 
 ## e) 
