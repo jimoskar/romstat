@@ -3,6 +3,7 @@
 library(spatial)
 library(MASS)
 library(tidyverse)
+library(spatstat)
 
 # Config
 setwd('~/Fysmat/8 Semester V2022/RomStat/romstat/project2/')
@@ -30,7 +31,7 @@ a = mean(N$n)
 lambda = 6
 
 sim.ns <- function(w, lambda, d=0.5, lambda_c=10, sigma_c=c(1,1), 
-                   N=100, k=100, fs=0.5){
+                   N=100, k=100, fs=0.7){
   # w: Window
   # lambda: Parent intensity
   # d: Distance to extend window
@@ -49,14 +50,17 @@ sim.ns <- function(w, lambda, d=0.5, lambda_c=10, sigma_c=c(1,1),
   
   for(i in 1:N){
     # parent points
-    y1 = runif(n[i], wExt[1,1], wExt[1,2])
-    y2 = runif(n[i], wExt[2,1], wExt[2,2])
+    y1 = runif(n[i], w[1,1], w[1,2]) # Not extended window
+    y2 = runif(n[i], w[2,1], w[2,2])
+    # y1 = runif(n[i], wExt[1,1], wExt[1,2])
+    # y2 = runif(n[i], wExt[2,1], wExt[2,2])
     # Daughter points
     x1 = c() # x daughter val
     x2 = c() # y daughter val
-    for (p in 1:n[i]){
+    nt = n[i]
+    for (p in 1:nt){
       # browser()
-      c = rpois(n[i], lambda=lambda_c) # #daughter points for this parent (p_c)
+      c = rpois(nt, lambda=lambda_c) # #daughter points for this parent (p_c)
       x1 = c(x1, rnorm(c, mean = y1[p], sd = sigma_c[1]^2)) # f_R & \hat r
       x2 = c(x2, rnorm(c, mean = y2[p], sd = sigma_c[2]^2)) # f_R & \hat r
     }
@@ -69,8 +73,8 @@ sim.ns <- function(w, lambda, d=0.5, lambda_c=10, sigma_c=c(1,1),
     #      main="NS sim", xlim=c(xmin-d,xmax+d), ylim=c(ymin-d, xmin-d))
     
     # Remove daughter points outside original window {x: x \in w}
-    where = x1>=rep(xmin,length(x1)) & x1<=rep(xmax,length(x1)) &
-      x2>=rep(ymin,length(x2)) & x2<=rep(ymax,length(x2))
+    where = x1>=rep(xmin,length(x1)) && x1<=rep(xmax,length(x1)) &&
+      x2>=rep(ymin,length(x2)) && x2<=rep(ymax,length(x2))
     sum(where)
     x1 = x1[where] 
     x2 = x2[where] 
@@ -85,12 +89,13 @@ plot.pi = function(sim, L){
   upper <- apply(sim$y, 2,  quantile, probs = c(0.95))
   lower <- apply(sim$y, 2,  quantile, probs = c(0.05))
   
-  gg.NS1 = ggplot(data = data.frame(l = lower, u = upper, x = sim$x)) + 
+  gg.NS = ggplot(data = data.frame(l = lower, u = upper, x = sim$x)) + 
     geom_ribbon(aes(x = x, ymin = l, ymax = u), alpha = 0.2) +
-    geom_line(data = L, aes(x, y)) + 
+    geom_line(data = L, aes(x, y), color="cyan3") + 
+    geom_abline(slope=1, intercept = 0, linetype=2) +
     xlim(0,0.5) + ylim(0,.6) +
     theme_minimal()
-  gg.NS1
+  gg.NS
 }
 
 
@@ -106,16 +111,19 @@ L.redwood <- Kfn(ppinit("redwood.dat"), fs = 0.5, k = 100)
 L.redwood.df <- data.frame(x = L.redwood$x, y = L.redwood$y)
 
 set.seed(321)
-redwood.ns <- sim.ns(w, 6, sigma_c = c(0.1,0.1))
+redwood.ns <- sim.ns(w, 10, sigma_c = c(0.01,0.01))
 
 ns.p1 = plot.pi(redwood.ns, L.redwood.df)
 ns.p1
 
 set.seed(321)
-redwood.ns <- sim.ns(w, 6, sigma_c = c(0.1,0.1), lambda_c = 5)
+sc = 0.17
+redwood.ns <- sim.ns(w, 23, sigma_c = c(sc,sc), lambda_c = 2.63)
 
 ns.p2 = plot.pi(redwood.ns, L.redwood.df)
 ns.p2
+
+temp = kppm(redwood.df, "Thomas")
 
 
 
@@ -133,3 +141,23 @@ ns.p2
 
 ## saveFigs ----
 ggsave("3_NS1.pdf", plot = ns.p1, path = figpath, width=4, height = 4)
+
+
+
+sim.NS = function(lm, lc, sc){
+  result = matrix(NA, nrow=0, ncol=2)
+  k=0
+  km = rpois(1,lm)
+  for (j in 1:km){
+    xm = c(runif(1,0,1), runif(1,-1,0))
+    kc = rpois(1,lc)
+    for (i in 1:kc) {
+      xc = mvrnorm(mu = xm, Sigma = sc*diag(2))
+      if (xc[1] > 0 && xc[1] < 1 && xc[2] > -1 && xc[2] < 0){
+        result = rbind(result, xc)
+        k = k + kc
+      }
+    }
+  }
+  return(result)
+}
