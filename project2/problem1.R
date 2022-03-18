@@ -60,7 +60,7 @@ sim.ppp <- function(xmin, xmax, ymin, ymax, n, fs){
   return(list(x = L$x, y = L.mat))
 }
 
-# Plot CI for cells
+# Plot PI for cells
 n.cells <- length(cells$x)
 cells.pois <- sim.ppp(0,1,0,1, n.cells, 0.5)
 
