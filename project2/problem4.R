@@ -27,15 +27,15 @@ L.cells.df <- data.frame(x = L.cells$x, y = L.cells$y)
 # For ggplot
 plot.df <- data.frame(x = c(x, rep(NA, 3*n)), y = c(y, rep(NA, 3*n)), 
                       idx = c(rep("Cells dataset", n), rep("Realization 1", n), 
-                            rep("Realization 2", n), rep("Realization 4", n)))
+                            rep("Realization 2", n), rep("Realization 3", n)))
 sim.Strauss <- function(beta, r0, plot.df){
-  set.seed(4250)
   L.mat <- matrix(NA, nrow = 100, ncol = 100)
+  browser()
   for(i in 1:100){
     S <- Strauss(n, exp(-beta), r0)
-    if(i < 4){
-      plot.df$x[(n + 1):((i + 1)*n)] = S$x
-      plot.df$y[(n + 1):((i + 1)*n)] = S$y
+    if(i < 4){ # Save first three realizations
+      plot.df$x[(i*n + 1):((i + 1)*n)] = S$x
+      plot.df$y[(i*n + 1):((i + 1)*n)] = S$y
     }
     L.Strauss <- Kfn(S, fs = 0.5, k = 100)
     L.mat[i, ] <- L.Strauss$y
