@@ -1,6 +1,7 @@
 ### Problem 2 ----
 library(spatial)
 library(tidyverse)
+library(viridis)
 
 ## a) ----
 
@@ -8,7 +9,6 @@ a.mat = read.table("obsprob.txt", header = TRUE)
 a.vec = a.mat$alpha
 p.mat = read.table("obspines.txt", header = TRUE)
 p.vec = p.mat$N_obs
-p.mat
 
 x.center <- y.center <- (1:30)*10 - 5 
 grid <- expand.grid(y.center, x.center)
@@ -16,7 +16,7 @@ grid <- expand.grid(y.center, x.center)
 # Plot observation probs
 ggplot(data = a.mat, aes(x, y)) +
   geom_tile(aes(fill = alpha)) +
-  scale_fill_viridis_c(name= expression(alpha)) +
+  scale_fill_viridis(name= expression(alpha)) +
   coord_fixed() + xlab("x") + ylab("y") + 
   ggtitle("Detection probability") + theme_minimal()
 
@@ -55,18 +55,19 @@ sim.points <- function(lambda, p.mat, plot.points=TRUE){
 }
 # Generate 3 realizations
 set.seed(2)
-sim.points(Lambda2)
-sim.points(Lambda2)
-sim.points(Lambda2)
+sim.points(Lambda2, p.mat)
+sim.points(Lambda2, p.mat)
+sim.points(Lambda2, p.mat)
 
 ## d) ----
 # Function for plotting point pattern or generate realization
-sim.cond <- function(lambda, a.mat, plot.points=TRUE){
+sim.cond <- function(lambda, p.mat, a.mat, plot.points=TRUE){
+  a.vec <- a.mat$alpha
   dx <- dy <- 10 # width and height of the cells
-  lambda.vec <- 100*lambda*(1 - a.vec)
+  lambda.undetected <- 100*lambda*(1 - a.vec)
+  undetected.vec <- rpois(900, lambda = lambda.undetected) 
   N.mat <- data.frame(x = a.mat$x, y = a.mat$y)
-  N.vec <- rpois(900, lambda = lambda.vec)
-  N.mat$N <- N.vec
+  N.mat$N <- undetected.vec + p.mat$N_obs
   if(plot.points){
     p <- ggplot()
     for(i in 1:nrow(N.mat)){
@@ -84,16 +85,16 @@ sim.cond <- function(lambda, a.mat, plot.points=TRUE){
 
 # Create 3 realizations:
 set.seed(2)
-sim.cond(Lambda2, a.mat)
-sim.cond(Lambda2, a.mat)
-sim.cond(Lambda2, a.mat)
+sim.cond(Lambda2, p.mat, a.mat)
+sim.cond(Lambda2, p.mat, a.mat)
+sim.cond(Lambda2, p.mat, a.mat)
 
 ## e) ----
 # Calculate the means of the conditional  N|M and marginal N over 500 realizations:
 N.mat <- NM.mat <- matrix(rep(NA,500*900), nrow = 500)
 for(i in 1:500){
   N.mat[i, ] = sim.points(Lambda2, p.mat, plot.point=FALSE)$N
-  NM.mat[i, ] = sim.cond(Lambda2, a.mat, plot.point=FALSE)$N
+  NM.mat[i, ] = sim.cond(Lambda2, p.mat, a.mat, plot.point=FALSE)$N
 }
 N.mean <- apply(N.mat, 2, mean)
 NM.mean <- apply(NM.mat, 2, mean)
