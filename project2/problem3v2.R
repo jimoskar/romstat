@@ -53,13 +53,21 @@ sim.NS.seq = function(lambda_m, lambda_c, sigma_c, N = 100, k=100,
                       fs=0.7, d=0, w=c(xl=0, xu=1, yl=-1, yu=0)){
   L.mat = matrix(rep(NA, N*k), nrow = N)
   lambda_m_ext = lambda_m*((w[2]-w[1]+2*d)*(w[4]-w[3]+2*d))
+  sim.plot = matrix(NA, nrow=0, ncol = 2)
+  len = c()
   for (i in 1:N){
     x = sim.NS(lambda_m_ext, lambda_c, sigma_c, d, w)
     L = Kfn(list(x = x[,1], y = x[,2]), fs = fs, k = k)
     # Store to matrix?
     L.mat[i, ] = L$y # all L-fn values
+    if (i < 4){
+      # sim.x.plot[i] = ( x[,1])
+      # sim.y.plot[i] = ( x[,2])
+      sim.plot = rbind(sim.plot,x)
+      len = cbind(len, length(x[,2]))
+    }
   }
-  return(list(x = L$x, y = L.mat))
+  return(list(x = L$x, y = L.mat, sim.plot = sim.plot, len = len))
 }
 
 
@@ -69,9 +77,10 @@ plot.pi = function(sim, L){
   
   gg.NS = ggplot(data = data.frame(l = lower, u = upper, x = sim$x)) + 
     geom_ribbon(aes(x = x, ymin = l, ymax = u), alpha = 0.2) +
-    geom_line(data = L, aes(x, y), color="cyan3") + 
+    geom_line(data = L, aes(x, y), color="Cyan3") + 
     geom_abline(slope=1, intercept = 0, linetype=2) +
     xlim(0,0.5) + ylim(0,.6) +
+    labs(color="Legend")
     theme_minimal()
   gg.NS
 }
@@ -93,32 +102,81 @@ sigma_c = 0.01 # simply guessed
 
 set.seed(321)
 redwood.ns1 = sim.NS.seq(lambda_m,lambda_c, sigma_c)
-plot.pi(redwood.ns1, L.redwood.df)
-
-# second guess with fnc(6, 10, 0.001)
-set.seed(321)
-redwood.ns2 = sim.NS.seq(lambda_m=6,
-                         lambda_c=10, 
-                         sigma_c =0.001)
-plot.pi(redwood.ns2, L.redwood.df)
-
-temp = kppm(as.ppp(redwood), "Thomas")
-
-
-
-
-
+ns.p1 = plot.pi(redwood.ns1, L.redwood.df)
 
 ## ii) Improved fit ----
-"Iterate guestimate to improve fit"
-"Try to make empirical L-fnc consistent wit 90% pi."
+# second guess with kppm thomas process
+thomasFit = kppm(as.ppp(redwood), clusters = "Thomas")
+lambda_m = thomasFit$par[1]
+lambda_c = thomasFit$mu
+sigma_c = thomasFit$par[2]
+
+c(lambda_m = lambda_m, lambda_c = lambda_c, sigma_c)
+
+set.seed(321)
+redwood.ns2 = sim.NS.seq(lambda_m,lambda_c, sigma_c)
+ns.p2 = plot.pi(redwood.ns2, L.redwood.df)
+ns2.u <- apply(redwood.ns2$y, 2,  quantile, probs = c(0.95))
+ns2.l <- apply(redwood.ns2$y, 2,  quantile, probs = c(0.05))
+
+# Third guess with extended window
+
+set.seed(321)
+redwood.ns3 = sim.NS.seq(lambda_m,lambda_c, sigma_c, d=0.5)
+ns.p3 = plot.pi(redwood.ns3, L.redwood.df)
+ns3.u <- apply(redwood.ns3$y, 2,  quantile, probs = c(0.95))
+ns3.l <- apply(redwood.ns3$y, 2,  quantile, probs = c(0.05))
+
+t=  (sum(ns3.u - ns3.l)/sum(ns2.u- ns2.l))
+(1-t)*sum(ns2.u- ns2.l)
+sum(ns2.u- ns2.l) - sum(ns3.u - ns3.l)
+# show plots
+ns.p1
+ns.p2
+ns.p3
+
 "List final guestimates of model params."
 
 ## iii) Display ----
 "Display data next to three realizations from guestimated NS model"
+x = redwood.df$x
+y = redwood.df$y
+n = length(x)
+n1 = (redwood.ns3$len[1])
+n2 = (redwood.ns3$len[2])
+n3 = (redwood.ns3$len[3])
+
+
+
+head(redwood.ns3$sim.plot)
+
+plot.df <- data.frame(x = c(x, redwood.ns3$sim.plot[,1]), 
+                      y = c(y, redwood.ns3$sim.plot[,2]), 
+                      idx = c(rep("Redwood dataset", n),
+                              rep("Realization 1", n1),
+                              rep("Realization 2", n2),
+                              rep("Realization 3", n3)
+                              ))
+# for (i in 2:4){
+#   plot.df$x[((i-1)*n+1):(i*n)] = x
+#   # you need this shit
+#   plot.df$y[((i-1)*n+1):(i*n)] = x
+# }
+
+ns.realizations = ggplot(plot.df) + 
+  geom_point(aes(x = x, y = y)) + 
+  facet_wrap(~idx, nrow = 2) + 
+  theme_minimal()
+
+length(redwood.ns3$sim.x.plot)
 
 
 ## saveFigs ----
-ggsave("3_NS1.pdf", plot = ns.p1, path = figpath, width=4, height = 4)
+ggsave("3_NSinit.pdf", plot = ns.p1, path = figpath, width=4, height = 4)
+ggsave("3_NSkppm.pdf", plot = ns.p2, path = figpath, width=4, height = 4)
+ggsave("3_NSext.pdf", plot = ns.p3, path = figpath, width=4, height = 4)
+ggsave("3_NSrealizations.pdf", plot = ns.realizations, path = figpath, 
+       width = 7, height = 7)
+
 
 
