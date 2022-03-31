@@ -36,7 +36,7 @@ plotAreaCol = function(fName, width, height, estVal, geoMap, leg, colLim = NULL)
                          end = 0,
                          limit = colLim,
                          name = leg) + 
-    coord_fixed() + 
+    coord_fixed() + theme_minimal() + 
     theme(text = element_text(size=40),
           legend.key.height = unit(4, 'cm'),
           legend.key.width  = unit(1.75, 'cm'))
