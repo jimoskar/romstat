@@ -5,23 +5,12 @@ source("resources/functions.R")
 v1 <- read.table("resources/Admin1Graph.txt")
 v2 <- read.table("resources/Admin2Graph.txt")
 
-make.R <- function(dim, ne){
-  R <- matrix(NA, nrow = dim, ncol = dim)
-  for(i in 1:dim){
-    for(j in 1:dim){
-      if(i == j){
-        R[i,j] <- sum(ne[i, 2:dim])
-      } else{
-        R[i,j] <- ifelse(ne[i,j], -1, 0)
-      }
-    }
-  }
-  return(R)
-}
-
 # Construct R1 and R2
-R1 <- make.R(37, v1)
-R2 <- make.R(775, v2)
+d1 <- as.matrix(v1) %*% as.vector(rep(1, 37))
+R1 <- diag(as.numeric(d1)) - unlist(v1)
+
+d2 <- as.matrix(v2) %*% as.vector(rep(1, 775))
+R2 <- diag(as.numeric(d2)) - unlist(v2)
 
 # Compute proportion of non-zero elements
 sum(R1 > 0)/(37*37)
@@ -35,15 +24,16 @@ plot.spars <- function(mat){
   
   p <- ggplot(spars.df, aes(coord.Var1, coord.Var2)) +
     geom_tile(aes(fill = fill)) + 
-    coord_fixed() + xlab("Column") + ylab("Row")  + theme_minimal() + theme(legend.position="none")
+    coord_fixed() + scale_y_reverse() + 
+    xlab("Column") + ylab("Row")  + theme_minimal() + theme(legend.position="none")
   return(p)
 }
 
 p1 <- plot.spars(R1)
-ggsave("figures/spars1.pdf", plot = p1)
+ggsave("figures/spars1.pdf", plot = p1, height = 5, width = 5)
 
 p2 <- plot.spars(R2)
-ggsave("figures/spars2.png", plot = p2)
+ggsave("figures/spars2.png", plot = p2, height = 5, width = 5)
 
 ## b) ----
 load("resources/Admin1Geography.RData")
@@ -102,7 +92,8 @@ plotAreaCol("figures/besag_var.pdf", 20, 20, besag.var, nigeriaAdm2, "Empirical 
 
 # Calculate cor of Gubio (150) with all others
 besag.cor <- cor(besag.mat[,150], besag.mat)
-plotAreaCol("figures/besag_cor.pdf", 20, 20, t(besag.cor), nigeriaAdm2, "Empircal correlation", c(-1, 1))
-
+plotAreaCol("figures/besag_cor.pdf", 20, 20, t(besag.cor), nigeriaAdm2, "Empircal correlation", c(-0.3, 1))
+besag.cor.neg <- as.numeric(besag.cor > 0)
+plotAreaCol("figures/besag_cor_neg.pdf", 20, 20, besag.cor.neg, nigeriaAdm2, "Empircal correlation", c(0, 1))
 
   
