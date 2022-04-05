@@ -39,12 +39,12 @@ ggsave("figures/spars2.png", plot = p2, height = 5, width = 5)
 load("resources/Admin1Geography.RData")
 load("resources/Admin2Geography.RData")
 
-sim.1o.intrinsic <- function(Q, eps){
+sim.1o.intrinsic <- function(Q, eps = 1e-10){
   n <- nrow(Q)
   Q.hat <- Q + eps*diag(n)
-  L.hat <- t(chol(Q.hat))
-  Z <- rnorm(n)
-  v <- solve(L.hat, Z)
+  L.hat <- chol(Q.hat) # No need to transpose here
+  z <- rnorm(n)
+  v <- solve(L.hat, z)
   x <- v - mean(v)
   return(x)
 }
@@ -52,10 +52,10 @@ sim.1o.intrinsic <- function(Q, eps){
 set.seed(4250)
 cs = c(-3, 3) # color scale
 leg = " "
-x.besag1 <- sim.1o.intrinsic(1*R1, 2)
-x.besag2 <- sim.1o.intrinsic(1*R1, 2)
-plotAreaCol("figures/besag1.pdf", 20, 20, x.besag1, nigeriaAdm1, leg, cs)
-plotAreaCol("figures/besag2.pdf", 20, 20, x.besag2, nigeriaAdm1, leg, cs)
+x.besag1 <- sim.1o.intrinsic(1*R1)
+x.besag2 <- sim.1o.intrinsic(1*R1)
+plotAreaCol("figures/besag_admin1_1.pdf", 20, 20, x.besag1, nigeriaAdm1, leg, cs)
+plotAreaCol("figures/besag_admin1_2.pdf", 20, 20, x.besag2, nigeriaAdm1, leg, cs)
 
 x.norm1 <- rnorm(37)
 x.norm2 <- rnorm(37)
@@ -67,8 +67,8 @@ plotAreaCol("figures/norm2.pdf", 20, 20, x.norm2, nigeriaAdm1, leg, cs)
 set.seed(4250)
 cs = c(-3, 3) # color scale
 leg = " "
-x.besag1 <- sim.1o.intrinsic(1*R2, 2)
-x.besag2 <- sim.1o.intrinsic(1*R2, 2)
+x.besag1 <- sim.1o.intrinsic(1*R2)
+x.besag2 <- sim.1o.intrinsic(1*R2)
 plotAreaCol("figures/besag_admin2_1.pdf", 20, 20, x.besag1, nigeriaAdm2, leg, cs)
 plotAreaCol("figures/besag_admin2_2.pdf", 20, 20, x.besag2, nigeriaAdm2, leg, cs)
 
@@ -82,17 +82,18 @@ plotAreaCol("figures/norm_admin2_2.pdf", 20, 20, x.norm2, nigeriaAdm2, leg, cs)
 
 # Create  matrix and realizations
 besag.mat <- matrix(NA, nrow = 100, ncol = 775)
+set.seed(4250)
 for(i in 1:100){
-  besag.mat[i, ] = sim.1o.intrinsic(1*R2, 2)
+  besag.mat[i, ] = sim.1o.intrinsic(1*R2)
 }
 
 # Caluclate empirical variance and plot it
 besag.var <- apply(besag.mat, 2, var)
-plotAreaCol("figures/besag_var.pdf", 20, 20, besag.var, nigeriaAdm2, "Empirical variance", c(0,1))
+plotAreaCol("figures/besag_var.pdf", 20, 20, besag.var, nigeriaAdm2, "Empirical variance")
 
 # Calculate cor of Gubio (150) with all others
 besag.cor <- cor(besag.mat[,150], besag.mat)
-plotAreaCol("figures/besag_cor.pdf", 20, 20, t(besag.cor), nigeriaAdm2, "Empircal correlation", c(-0.3, 1))
+plotAreaCol("figures/besag_cor.pdf", 20, 20, t(besag.cor), nigeriaAdm2, "Empircal correlation")
 besag.cor.neg <- as.numeric(besag.cor > 0)
 plotAreaCol("figures/besag_cor_neg.pdf", 20, 20, besag.cor.neg, nigeriaAdm2, "Empircal correlation", c(0, 1))
 
