@@ -30,7 +30,7 @@ plot.df <- data.frame(x = c(x, rep(NA, 3*n)), y = c(y, rep(NA, 3*n)),
                             rep("Realization 2", n), rep("Realization 3", n)))
 sim.Strauss <- function(beta, r0, plot.df){
   L.mat <- matrix(NA, nrow = 100, ncol = 100)
-  browser()
+  # browser()
   for(i in 1:100){
     S <- Strauss(n, exp(-beta), r0)
     if(i < 4){ # Save first three realizations

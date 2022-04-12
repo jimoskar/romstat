@@ -39,7 +39,6 @@ sim.NS = function(lm, lc, sc, d = 0, w=c(xl=0, xu=1, yl=-1, yu=0)){
     for (i in 1:kc) {
       xc = mvrnorm(mu = xm, Sigma = sc*diag(2))
       if (xc[1] > w[1] && xc[1] < w[2] && xc[2] > w[3] && xc[2] < w[4]){
-      # if (xc[1] > 0 && xc[1] < 1 && xc[2] > -1 && xc[2] < 0){
         result = rbind(result, xc)
         k = k + kc # Total #points
       }
@@ -58,11 +57,9 @@ sim.NS.seq = function(lambda_m, lambda_c, sigma_c, N = 100, k=100,
   for (i in 1:N){
     x = sim.NS(lambda_m_ext, lambda_c, sigma_c, d, w)
     L = Kfn(list(x = x[,1], y = x[,2]), fs = fs, k = k)
-    # Store to matrix?
+    # Store to matrix
     L.mat[i, ] = L$y # all L-fn values
     if (i < 4){
-      # sim.x.plot[i] = ( x[,1])
-      # sim.y.plot[i] = ( x[,2])
       sim.plot = rbind(sim.plot,x)
       len = cbind(len, length(x[,2]))
     }
@@ -84,10 +81,6 @@ plot.pi = function(sim, L){
     theme_minimal()
   gg.NS
 }
-
-
-
-
 
 
 # lambda_m = 20, lambda_c = 3, sigma_c = 0.002
@@ -135,10 +128,7 @@ ns.p1
 ns.p2
 ns.p3
 
-"List final guestimates of model params."
-
-## iii) Display ----
-"Display data next to three realizations from guestimated NS model"
+## iii) Display realizations ----
 x = redwood.df$x
 y = redwood.df$y
 n = length(x)
@@ -147,9 +137,6 @@ n2 = (redwood.ns3$len[2])
 n3 = (redwood.ns3$len[3])
 
 
-
-head(redwood.ns3$sim.plot)
-
 plot.df <- data.frame(x = c(x, redwood.ns3$sim.plot[,1]), 
                       y = c(y, redwood.ns3$sim.plot[,2]), 
                       idx = c(rep("Redwood dataset", n),
@@ -157,26 +144,20 @@ plot.df <- data.frame(x = c(x, redwood.ns3$sim.plot[,1]),
                               rep("Realization 2", n2),
                               rep("Realization 3", n3)
                               ))
-# for (i in 2:4){
-#   plot.df$x[((i-1)*n+1):(i*n)] = x
-#   # you need this shit
-#   plot.df$y[((i-1)*n+1):(i*n)] = x
-# }
+
 
 ns.realizations = ggplot(plot.df) + 
   geom_point(aes(x = x, y = y)) + 
   facet_wrap(~idx, nrow = 2) + 
   theme_minimal()
-
-length(redwood.ns3$sim.x.plot)
-
+ns.realizations
 
 ## saveFigs ----
-ggsave("3_NSinit.pdf", plot = ns.p1, path = figpath, width=4, height = 4)
-ggsave("3_NSkppm.pdf", plot = ns.p2, path = figpath, width=4, height = 4)
-ggsave("3_NSext.pdf", plot = ns.p3, path = figpath, width=4, height = 4)
-ggsave("3_NSrealizations.pdf", plot = ns.realizations, path = figpath, 
-       width = 7, height = 7)
+# ggsave("3_NSinit.pdf", plot = ns.p1, path = figpath, width=4, height = 4)
+# ggsave("3_NSkppm.pdf", plot = ns.p2, path = figpath, width=4, height = 4)
+# ggsave("3_NSext.pdf", plot = ns.p3, path = figpath, width=4, height = 4)
+# ggsave("3_NSrealizations.pdf", plot = ns.realizations, path = figpath, 
+#        width = 7, height = 7)
 
 
 

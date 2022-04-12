@@ -1,0 +1,68 @@
+---
+title: "Title"
+author: "Christian Oppegård Moen"
+date: "DD MM YYYY"
+output: 
+  bookdown::pdf_document2:
+    toc_depth: '3'
+    number_sections: false
+  # pdf_document:
+  # #   toc: no
+  #   toc_depth: '3'
+subtitle: Course
+urlcolor: blue
+editor_options: 
+  chunk_output_type: console
+header-includes:
+- \usepackage[width=0.8\textwidth]{caption}
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo = T, tidy=T, message=F, warning=F,
+  strip.white=F,
+  prompt=F,
+  cache=T,
+  # root.dir = "./subfolder",
+  size="scriptsize",
+  fig.width=7, 
+  fig.height=5, 
+  fig.align = "center"
+)
+```
+
+```{r config, include=F}
+if (F){
+  setwd("C:/Users/chris/OneDrive/Documents/Fysmat/8 Semester V2022/RomStat/romstat/project3/")
+  options(error=recover)
+  options(error=NULL)
+}
+source("resources/functions.R")
+load("resources/Admin1Geography.RData")
+fig.path = "figures/"
+```
+
+
+# a) Display observations
+**Display the observed proportions (i.e., pˆa, and not ya) on the Nigeria map. Discuss whether borrowing strength in space to reduce uncertainty seems reasonable.**
+
+```{r adisplay, options}
+invLogit = function(x) {
+  exp(x)/(exp(x) + 1)
+}
+dirEst = read.table("resources/DirectEstimates.txt", header = T)
+leg = " "
+cs.p = c(0,1)
+cs.v = c(0,0.2)
+p.hat = invLogit(dirEst$Observation)
+V = dirEst$StdDev^2
+range(V)
+plotAreaCol(paste0(fig.path, "vacc_cov_obs.pdf"),
+            20,20,p.hat,nigeriaAdm1,leg,cs.p)
+plotAreaCol(paste0(fig.path, "vacc_cov_var.pdf"),
+            20,20,V,nigeriaAdm1,leg,cs.v)
+```
+
+# b) Conditional distr.
+**Determine the distribution of Y|X and its parameters.**
