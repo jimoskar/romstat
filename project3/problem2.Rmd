@@ -43,6 +43,9 @@ load("resources/Admin1Geography.RData")
 fig.path = "figures/"
 ```
 
+```{r packages, options}
+library(logitnorm)
+```
 
 # a) Display observations
 **Display the observed proportions (i.e., pˆa, and not ya) on the Nigeria map. Discuss whether borrowing strength in space to reduce uncertainty seems reasonable.**
@@ -51,18 +54,62 @@ fig.path = "figures/"
 invLogit = function(x) {
   exp(x)/(exp(x) + 1)
 }
+
 dirEst = read.table("resources/DirectEstimates.txt", header = T)
 leg = " "
-cs.p = c(0,1)
-cs.v = c(0,0.2)
+# cs.v = c(0,0.2)
 p.hat = invLogit(dirEst$Observation)
 V = dirEst$StdDev^2
-range(V)
+cs.p = c(0,1)
+# cs.p = c(range(p.hat))
+cs.v = range(V)
+
 plotAreaCol(paste0(fig.path, "vacc_cov_obs.pdf"),
-            20,20,p.hat,nigeriaAdm1,leg,cs.p)
+            20,20,p.hat,nigeriaAdm1,"Proportion vaccinated",cs.p)
 plotAreaCol(paste0(fig.path, "vacc_cov_var.pdf"),
-            20,20,V,nigeriaAdm1,leg,cs.v)
+            20,20,V,nigeriaAdm1,"Variance",cs.v)
 ```
 
 # b) Conditional distr.
-**Determine the distribution of Y|X and its parameters.**
+**Compute median and the coeff. of variation for $P_a|Y=y$ empirically based on 100 samples**
+```{r 2bEmpiricPa, options}
+set.seed(321)
+n = length(V)
+sigma=100
+y = dirEst$Observation
+Y = rnorm(y,sqrt(V))
+# sigma=V
+# V = 100
+Q_YX = 1/diag(V)
+Q_X = diag(1/sigma^2, nrow = n, ncol = n)
+
+mu_XY = diag(1/sigma^2* V + 1 + y)
+Q_XY =  Q_X + Q_YX
+
+sim.uncond = function(mu, Q, N=100){
+  L = sqrt(diag(Q))
+  n = length(mu)
+  x.mat = matrix(nrow = n, ncol = N)
+  for (i in 1:100){
+    z = rnorm(n)
+    v = z/L
+    x.mat[,i] = mu + v
+  }
+  return(x.mat)
+}
+
+x.mat = sim.uncond(mu_XY, Q_XY)
+p.star.mat = invLogit(x.mat)
+p.star.median = apply(p.star.mat,1,median)
+v.star = apply(p.star.mat, 1, var)
+# p.star.median
+# v.star
+
+```
+**display them in two maps of Nigeria.**
+```{r 2bDisplay, options}
+plotAreaCol(paste0(fig.path, "2b_median.pdf"),
+            20,20,p.star.median,nigeriaAdm1,"Median",cs.p)
+plotAreaCol(paste0(fig.path, "2b_var.pdf"),
+            20,20,v.star,nigeriaAdm1,"Variance",range(v.star))
+```
