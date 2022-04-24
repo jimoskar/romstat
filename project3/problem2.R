@@ -49,7 +49,7 @@ plotAreaCol("figures/P_CV_b.pdf", 20, 20, P.CV, nigeriaAdm1, "Coefficient\nof Va
 
 # sample P_A|Y
 inv.V.mat <- diag(1/V)
-mu.cond <- -solve(inv.V.mat + R1) %*% R1 %*% y
+mu.cond <- solve(inv.V.mat + R1) %*% inv.V.mat %*% y
 Q.cond <- inv.V.mat + R1
 P.mat <- sim.P(100, Q.cond, mu.cond)
 
@@ -86,3 +86,38 @@ P.sd <- apply(P.mat, 2, sd)
 P.mean <- apply(P.mat, 2, mean)
 P.CV <- P.sd/P.mean # Cofficient of variation
 plotAreaCol("figures/P_CV_d.pdf", 20, 20, P.CV, nigeriaAdm1, "Coefficient\nof Variation", cs.CV)
+
+## e) ----
+
+## tau = 0.1
+tau1 <- 0.1
+mu1 <- solve(inv.V.mat + tau1*R1) %*% inv.V.mat %*% y
+Q1 <- inv.V.mat + tau1*R1
+
+# Find and plot Median
+P.mat <- sim.P(100, Q1, mu1)
+P.median <- apply(P.mat, 2, median)
+plotAreaCol("figures/P_median_e1.pdf", 20, 20, P.median, nigeriaAdm1, "Median", cs.median)
+
+# Find and plot CV
+P.sd <- apply(P.mat, 2, sd)
+P.mean <- apply(P.mat, 2, mean)
+P.CV <- P.sd/P.mean # Cofficient of variation
+plotAreaCol("figures/P_CV_e1.pdf", 20, 20, P.CV, nigeriaAdm1, "Coefficient\nof Variation", cs.CV)
+
+## tau = 10
+tau2 <- 10
+mu2 <- solve(inv.V.mat + tau2*R1) %*% inv.V.mat %*% y
+Q2 <- inv.V.mat + tau2*R1
+
+# Find and plot Median
+P.mat <- sim.P(100, Q2, mu2)
+P.median <- apply(P.mat, 2, median)
+plotAreaCol("figures/P_median_e2.pdf", 20, 20, P.median, nigeriaAdm1, "Median", cs.median)
+
+# Find and plot CV
+P.sd <- apply(P.mat, 2, sd)
+P.mean <- apply(P.mat, 2, mean)
+P.CV <- P.sd/P.mean # Cofficient of variation
+plotAreaCol("figures/P_CV_e2.pdf", 20, 20, P.CV, nigeriaAdm1, "Coefficient\nof Variation", cs.CV)
+
