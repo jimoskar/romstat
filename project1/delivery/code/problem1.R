@@ -10,13 +10,17 @@ library(dplyr)
 ## a)
 
 # Correlation functions
+# parameter for matern
+phi.matern <- function(a, nu){
+  return(a/sqrt(8*nu))
+}
 curve(1/5 * cov.spatial(x, cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1), 
       from = 0, to = 100, col = 2, xlab = "distance", ylab = expression(rho(h)))
 curve(1/5 *cov.spatial(x, cov.mod = "powered.exponential", cov.pars = c(5, 10), kappa = 1.9), 
       from = 0, to = 100, col = 2, lwd = 2, add = TRUE)
-curve(1/5 * cov.spatial(x, cov.mod = "matern", cov.pars = c(5, 20), kappa = 1), 
+curve(1/5 * cov.spatial(x, cov.mod = "matern", cov.pars = c(5, phi.matern(60, 10)), kappa = 1), 
       from = 0, to = 100, col = 3, add = TRUE)
-curve(1/5 *cov.spatial(x, cov.mod = "matern", cov.pars = c(5, 20), kappa = 3), 
+curve(1/5 *cov.spatial(x, cov.mod = "matern", cov.pars = c(5, phi.matern(50, 3)), kappa = 3), 
       from = 0, to = 100, col = 3, lwd = 2, add = TRUE)
 legend("topright", c(expression("Powered exponential, " ~alpha~ " = 1"), 
                      expression("Powered exponential, " ~alpha~ " = 1.9"),        
@@ -88,12 +92,14 @@ ggplot(df.exp, aes(x = x)) + geom_line(aes(y = y1), color = palette[1]) +
 df.matern <- data.frame(x = rep(D.tilde, 4), 
                         y1 = rep(NA, 4), y2 = rep(NA, 4), y3 = rep(NA, 4), y4 = rep(NA, 4),
                         combination = rep(NA, 4 * n))
+params.matern <- expand.grid(sigma2 = c(1,5), nu = c(1,3), a = 40)
 
 for(i in 1:nrow(params.matern)){
   mu <- rep(0, n)
   Sigma <- cov.spatial(as.matrix(dist(expand.grid(D.tilde))), 
                        cov.mod = "matern", 
-                       cov.pars = c(params.matern$sigma2[i], params.matern$a.matern[i]), 
+                       cov.pars = c(params.matern$sigma2[i], phi.matern(params.matern$a[i], 
+                                                                        params.matern$nu[i])), 
                        kappa = params.matern$nu[i])
   X <- mvrnorm(4, mu, Sigma)
   df.matern$y1[((i-1)*n + 1):(i*50)] = X[1, ]
